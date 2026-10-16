@@ -39,8 +39,8 @@ GitHub Release automatically. See [Firefox release setup](docs/FIREFOX_SUBMISSIO
 
 ## Links
 
-- [Source code](https://github.com/r-thak/always-active-plus)
-- [Issue tracker](https://github.com/r-thak/always-active-plus/issues)
+- [Source code](https://github.com/m-cro/always-active-plus)
+- [Issue tracker](https://github.com/m-cro/always-active-plus/issues)
 - [Privacy statement](PRIVACY.md)
 
 ## License
