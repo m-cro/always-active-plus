@@ -64,3 +64,126 @@ hr {
 #redirect-container {
   display: contents;
 }
+
+.keyboard-lab {
+  margin: 22px 0 28px;
+  padding: 15px 0 0;
+  border-top: dashed 1px #cacaca;
+}
+.keyboard-lab-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.keyboard-lab-kicker {
+  margin: 0 0 2px;
+  color: #666;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.keyboard-lab h2 {
+  margin: 0 0 5px;
+  font-size: 110%;
+}
+.keyboard-lab-heading > div:first-child > p:last-child {
+  max-width: 680px;
+  margin: 4px 0 0;
+}
+.keyboard-event-count {
+  display: inline-block;
+  min-width: 1.5em;
+  padding: 1px 4px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  color: #666;
+  font-size: 11px;
+  font-weight: normal;
+  text-align: center;
+}
+.keyboard-lab-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 5px;
+}
+.keyboard-lab-actions button {
+  min-height: 28px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font: inherit;
+}
+.keyboard-capture-panel {
+  margin: 12px 0;
+}
+.keyboard-capture-panel label {
+  display: block;
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+#key-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px;
+}
+.keyboard-capture-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 5px 0 0;
+  color: #666;
+  font-size: 12px;
+}
+.keyboard-capture-status span:first-child {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #568b5a;
+}
+.keyboard-lab-hint { margin: 10px 0; color: #666; font-size: 12px; }
+.keyboard-table-wrap {
+  overflow-x: auto;
+  border-top: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+}
+.keyboard-lab table {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: collapse;
+  text-align: left;
+}
+.keyboard-lab th {
+  padding: 0;
+  color: #555;
+  font-size: 11px;
+}
+.keyboard-lab .keyboard-sort {
+  width: 100%;
+  min-height: 30px;
+  padding: 4px 7px;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: #444;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+.keyboard-sort::after { content: "↕"; margin-left: 4px; color: #888; }
+.keyboard-lab th[aria-sort="ascending"] .keyboard-sort::after { content: "↑"; }
+.keyboard-lab th[aria-sort="descending"] .keyboard-sort::after { content: "↓"; }
+.keyboard-lab .keyboard-sort:hover { text-decoration: underline; }
+.keyboard-lab td { padding: 7px; border-top: 1px solid #ddd; font-size: 12px; }
+.keyboard-lab td code { font: 11px ui-monospace, monospace; }
+.keyboard-lab td:first-child, .keyboard-lab th:first-child { width: 36px; text-align: center; }
+.keyboard-lab input[type="checkbox"] { cursor: pointer; }
+.keyboard-event-type { font-weight: 600; }
+.keyboard-empty-row td { padding: 18px 10px; color: #666; text-align: center; }
+.keyboard-save-status { min-height: 18px; margin: 8px 0 0; color: #444; font-size: 12px; }
+.keyboard-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+
+@media (max-width: 780px) {
+  .keyboard-lab-heading { align-items: start; flex-direction: column; }
+  .keyboard-lab-actions { justify-content: flex-start; }
+}

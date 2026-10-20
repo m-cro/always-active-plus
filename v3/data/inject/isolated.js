@@ -1,3 +1,4 @@
+(() => {
 /* Tests:
   http://www2.stat.duke.edu/~cc248/jsphylosvg/js/yui/tests/event/tests/manual/window-focus-test.html
   https://page-visibility.vercel.app/
@@ -5,6 +6,13 @@
   https://cdpn.io/tobiasdev/fullpage/oGewQR?anon=true&view=
   https://oncode-frontend.github.io/tab_detector/
 */
+
+// This script can be injected into an already-open document when the user
+// changes a site rule. Keep its storage listener and event bridge singular.
+if (self.PROTECTED === true) {
+  return;
+}
+self.PROTECTED = true;
 
 let port = document.getElementById('lwys-ctv-port');
 if (!port) {
@@ -28,12 +36,16 @@ const update = () => chrome.storage.local.get({
   'mouseout': true,
   'keyboard': true,
   'blockedKeys': ['AltGraph'],
+  'blockedKeyStates': [],
+  'blockedEvents': [],
   'mouseHumanize': 50,
   'mouseInterpolation': 0.35,
   'mouseStartSmoothness': 0.3,
   'mouseStopSmoothness': 0.3,
   'visibility': true,
   'pointercapture': true,
+  'allSites': true,
+  'hosts': [],
   'policies': null
 }, prefs => {
   let hostname = location.hostname;
@@ -45,7 +57,18 @@ const update = () => chrome.storage.local.get({
   prefs.policies = prefs.policies ?? {};
   const policy = prefs.policies[hostname] || [];
 
-  port.dataset.enabled = prefs.enabled;
+  const legacyAllSites = !prefs.allSites && prefs.hosts.includes('*');
+  const allSites = prefs.allSites || legacyAllSites;
+  const hosts = legacyAllSites ? [] : prefs.hosts.filter(host => host !== '*');
+  const matches = rule => {
+    if (rule.startsWith('*.')) {
+      const suffix = rule.slice(2);
+      return hostname === suffix || hostname.endsWith('.' + suffix);
+    }
+    return hostname === rule;
+  };
+  const listed = hosts.some(matches);
+  port.dataset.enabled = prefs.enabled && (allSites ? !listed : listed);
   port.dataset.blur = policy.includes('blur') ? false : prefs.blur;
   port.dataset.focus = policy.includes('focus') ? false : prefs.focus;
   port.dataset.redirect = policy.includes('redirect') ? false : prefs.redirect;
@@ -56,6 +79,8 @@ const update = () => chrome.storage.local.get({
     .map(key => String(key).trim().toLowerCase())
     .filter(Boolean)
     .join('\n');
+  port.dataset.blockedEvents = JSON.stringify(Array.isArray(prefs.blockedEvents) ? prefs.blockedEvents : []);
+  port.dataset.blockedKeyStates = JSON.stringify(Array.isArray(prefs.blockedKeyStates) ? prefs.blockedKeyStates : []);
   port.dataset.mouseHumanize = String(Math.max(0, Math.min(100,
     Number.isFinite(Number(prefs.mouseHumanize)) ? Number(prefs.mouseHumanize) : 50)));
   for (const id of ['mouseInterpolation', 'mouseStartSmoothness', 'mouseStopSmoothness']) {
@@ -75,3 +100,4 @@ if (window.top === window) {
     method: 'set-icon'
   });
 }
+})();

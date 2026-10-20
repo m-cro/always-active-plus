@@ -1,3 +1,6 @@
+(() => {
+  if (self.__AAP_MAIN_INSTALLED) return;
+  self.__AAP_MAIN_INSTALLED = true;
 /* global navigation */
 {
   /* port is used to communicate between chrome and page scripts */
@@ -123,8 +126,25 @@
   }, true);
 
   /* pointercapture */
+  const releasedPointers = new Set();
+  const rememberReleasedPointer = e => {
+    if (!Number.isFinite(e.pointerId)) return;
+    releasedPointers.add(e.pointerId);
+    // lostpointercapture follows pointerup/pointercancel synchronously. Expire
+    // the marker afterward so a later, unexpected capture loss is still blocked.
+    setTimeout(() => releasedPointers.delete(e.pointerId), 0);
+  };
+  window.addEventListener('pointerdown', e => {
+    if (Number.isFinite(e.pointerId)) releasedPointers.delete(e.pointerId);
+  }, true);
+  window.addEventListener('pointerup', rememberReleasedPointer, true);
+  window.addEventListener('pointercancel', rememberReleasedPointer, true);
   window.addEventListener('lostpointercapture', e => {
     if (port.dataset.enabled === 'true' && port.dataset.pointercapture !== 'false') {
+      if (releasedPointers.has(e.pointerId)) {
+        releasedPointers.delete(e.pointerId);
+        return;
+      }
       block(e);
     }
   }, true);
@@ -202,6 +222,8 @@
   };
   window.addEventListener('focusout', onfocusout, true);
   window.addEventListener('focusin', onfocusin, true);
+  window.addEventListener('DOMFocusOut', onfocusout, true);
+  window.addEventListener('DOMFocusIn', onfocusin, true);
   const resetFocusReentry = () => {
     focusReentry = false;
   };
@@ -676,6 +698,7 @@
   window.addEventListener('pointerrawupdate', onPointerMove, true);
   const snapMousePath = e => {
     if (!Number.isFinite(e.clientX) || !Number.isFinite(e.clientY)) return;
+    lastRealMoveTime = Date.now();
     focusGap = undefined;
     if (!mousePath) {
       mouseExitPoint = undefined;
@@ -701,11 +724,68 @@
 
   /* keyboard */
   const shouldBlockKey = e => {
+    try {
+      const modifiers = ['Alt', 'AltGraph', 'Control', 'Meta', 'Shift']
+        .filter(name => e.getModifierState?.(name));
+      const blockedKeyStates = JSON.parse(port.dataset.blockedKeyStates || '[]');
+      if (blockedKeyStates.some(rule => rule.key === String(e.key) &&
+          JSON.stringify(rule.modifiers || []) === JSON.stringify(modifiers))) {
+        return true;
+      }
+      const blockedEvents = JSON.parse(port.dataset.blockedEvents || '[]');
+      if (blockedEvents.some(event => event.type === e.type &&
+          event.key === String(e.key) &&
+          event.code === String(e.code) &&
+          Number(event.keyCode) === Number(e.keyCode) &&
+          Number(event.location || 0) === Number(e.location || 0) &&
+          JSON.stringify(event.modifiers || []) === JSON.stringify(modifiers))) {
+        return true;
+      }
+    }
+    catch (error) {}
     const keys = new Set((port.dataset.blockedKeys || '').split('\n').filter(Boolean));
     if (keys.has(String(e.key).toLowerCase()) ||
         keys.has(String(e.code).toLowerCase()) ||
         keys.has(String(e.keyCode))) {
       return true;
+    }
+    const modifiers = {
+      alt: ['Alt', 'altKey'],
+      control: ['Control', 'ctrlKey'],
+      ctrl: ['Control', 'ctrlKey'],
+      meta: ['Meta', 'metaKey'],
+      shift: ['Shift', 'shiftKey'],
+      altgraph: ['AltGraph', 'altGraphKey']
+    };
+    const hasModifier = name => {
+      const modifier = modifiers[name];
+      if (!modifier) return false;
+      try {
+        if (e.getModifierState && e.getModifierState(modifier[0])) return true;
+      }
+      catch (error) {}
+      return Boolean(e[modifier[1]]);
+    };
+    for (const key of keys) {
+      if (key.includes('@')) {
+        const separator = key.lastIndexOf('@');
+        try {
+          const keyName = decodeURIComponent(key.slice(0, separator));
+          const state = key.slice(separator + 1);
+          const expected = state === 'none' ? [] : [...new Set(state.split('+').map(name => name.trim() === 'ctrl' ? 'control' : name.trim()))].sort();
+          const active = ['alt', 'altgraph', 'control', 'meta', 'shift'].filter(hasModifier).sort();
+          if (keyName === String(e.key).toLowerCase() && JSON.stringify(expected) === JSON.stringify(active)) return true;
+        }
+        catch (error) {}
+        continue;
+      }
+      const chord = key.toLowerCase().split('+').map(part => part.trim());
+      if (chord.length > 1 && chord.every(part => modifiers[part]) && chord.every(hasModifier)) {
+        return true;
+      }
+      if (chord.length === 1 && modifiers[chord[0]] && hasModifier(chord[0])) {
+        return true;
+      }
     }
     try {
       return keys.has('altgraph') && e.getModifierState('AltGraph');
@@ -755,3 +835,4 @@
     }
   });
 }
+})();

@@ -156,6 +156,7 @@ const loadInjection = ({fakeTimers = false, loadIsolated = false} = {}) => {
     performance: {now: () => 0},
     setTimeout: schedule,
     clearTimeout: cancel,
+    self: window,
     window
   });
   const source = fs.readFileSync(
@@ -254,22 +255,24 @@ test('blocks visibility events captured from window before page listeners can ob
   assert.equal(observed, false);
 });
 
-test('blocks focus boundary events when focus leaves or re-enters the browser window', () => {
-  const {window} = loadInjection();
-  const exit = createEvent('focusout', {relatedTarget: null});
-  const reentry = createEvent('focusin', {relatedTarget: null});
+for (const [out, into] of [['focusout', 'focusin'], ['DOMFocusOut', 'DOMFocusIn']]) {
+  test(`blocks ${out}/${into} when focus leaves or re-enters the browser window`, () => {
+    const {window} = loadInjection();
+    const exit = createEvent(out, {relatedTarget: null});
+    const reentry = createEvent(into, {relatedTarget: null});
 
-  window.dispatchEvent(exit);
-  window.dispatchEvent(reentry);
+    window.dispatchEvent(exit);
+    window.dispatchEvent(reentry);
 
-  assert.equal(exit.defaultPrevented, true);
-  assert.equal(reentry.defaultPrevented, true);
-  window.dispatchEvent(createEvent('pointerdown'));
+    assert.equal(exit.defaultPrevented, true);
+    assert.equal(reentry.defaultPrevented, true);
+    window.dispatchEvent(createEvent('pointerdown'));
 
-  const ordinaryFocus = createEvent('focusin', {relatedTarget: null});
-  window.dispatchEvent(ordinaryFocus);
-  assert.equal(ordinaryFocus.defaultPrevented, undefined);
-});
+    const ordinaryFocus = createEvent(into, {relatedTarget: null});
+    window.dispatchEvent(ordinaryFocus);
+    assert.equal(ordinaryFocus.defaultPrevented, undefined);
+  });
+}
 
 test('hides the matching re-entry after a blocked overlay exit', () => {
   const {window} = loadInjection();
@@ -468,6 +471,12 @@ test('near-zero interpolation with no start or stop smoothing moves quickly', ()
 test('saved slider values reach the injected page without a reload', () => {
   const {port, setPreference} = loadInjection({loadIsolated: true});
   assert.equal(port.dataset.mouseInterpolation, '0.35');
+  assert.equal(port.dataset.blockedEvents, '[]');
+  const blockedEvents = [{
+    type: 'keydown', key: 'Shift', code: 'ShiftLeft', keyCode: 16, location: 1, modifiers: ['Shift']
+  }];
+  setPreference('blockedEvents', blockedEvents);
+  assert.deepEqual(JSON.parse(port.dataset.blockedEvents), blockedEvents);
   setPreference('mouseInterpolation', 0.82);
   setPreference('mouseStartSmoothness', 1.22);
   setPreference('mouseStopSmoothness', 0.88);
@@ -587,4 +596,57 @@ test('matches configured code and keyCode values case-insensitively', () => {
 
   assert.equal(byCode.defaultPrevented, true);
   assert.equal(byKeyCode.defaultPrevented, true);
+});
+
+test('matches key and exact modifier state entries in blocked key values', () => {
+  const {port, window} = loadInjection();
+  port.dataset.blockedKeys = 'shift@alt+shift';
+  const matching = createEvent('keydown', {
+    key: 'Shift', code: 'ShiftLeft', keyCode: 16,
+    getModifierState: name => name === 'Alt' || name === 'Shift'
+  });
+  const otherKey = createEvent('keydown', {
+    key: 'a', code: 'KeyA', keyCode: 65,
+    getModifierState: name => name === 'Alt' || name === 'Shift'
+  });
+  const extraModifier = createEvent('keydown', {
+    key: 'Shift', code: 'ShiftLeft', keyCode: 16,
+    getModifierState: name => ['Alt', 'Shift', 'Control'].includes(name)
+  });
+  for (const event of [matching, otherKey, extraModifier]) window.dispatchEvent(event);
+  assert.equal(matching.defaultPrevented, true);
+  assert.equal(otherKey.defaultPrevented, undefined);
+  assert.equal(extraModifier.defaultPrevented, undefined);
+});
+
+test('blocks only captured keyboard event signatures', () => {
+  const {port, window} = loadInjection();
+  port.dataset.blockedEvents = JSON.stringify([{
+    type: 'keydown',
+    key: 'Shift',
+    code: 'ShiftLeft',
+    keyCode: 16,
+    location: 1,
+    modifiers: ['Alt', 'Shift']
+  }]);
+  const selectedEvent = createEvent('keydown', {
+    key: 'Shift',
+    code: 'ShiftLeft',
+    keyCode: 16,
+    location: 1,
+    getModifierState: modifier => modifier === 'Alt' || modifier === 'Shift'
+  });
+  const otherKey = createEvent('keydown', {
+    key: 'a',
+    code: 'KeyA',
+    keyCode: 65,
+    location: 0,
+    getModifierState: modifier => modifier === 'Alt' || modifier === 'Shift'
+  });
+
+  window.dispatchEvent(selectedEvent);
+  window.dispatchEvent(otherKey);
+
+  assert.equal(selectedEvent.defaultPrevented, true);
+  assert.equal(otherKey.defaultPrevented, undefined);
 });

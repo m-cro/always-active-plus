@@ -20,10 +20,13 @@ test('mouse sliders save their values without Save Options', () => {
   const timers = new Map();
   let timerId = 0;
   const context = vm.createContext({
-    chrome: {storage: {local: {
-      get() {},
-      set(value) { writes.push(value); }
-    }}},
+    chrome: {storage: {
+      local: {
+        get() {},
+        set(value) { writes.push(value); }
+      },
+      onChanged: {addListener() {}}
+    }},
     document: {
       getElementById: element,
       addEventListener() {}

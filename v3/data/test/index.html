@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Protection Test :: Always Active Plus</title>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body data-lab-name="Protection Test">
+  <main>
+    <header class="masthead">
+      <a class="back" href="../options/index.html">← Options</a>
+      <p class="eyebrow">Always Active Plus / Test bench</p>
+      <h1>Protection Test</h1>
+      <p class="intro">Check which page events the extension lets through. Switch between active and paused modes here without changing your saved settings.</p>
+    </header>
+
+    <section class="mode-panel" aria-labelledby="mode-title">
+      <div>
+        <p class="step">LIVE MODE</p>
+        <h2 id="mode-title">Protection is <span id="mode-label">loading…</span></h2>
+        <p id="mode-help">Loading your keyboard and event settings…</p>
+      </div>
+      <div class="mode-actions">
+        <button id="active-mode" class="primary" type="button">Simulate active</button>
+        <button id="paused-mode" class="quiet" type="button">Simulate paused</button>
+      </div>
+    </section>
+
+    <section class="bench" aria-labelledby="bench-title">
+      <div class="bench-heading">
+        <div>
+          <p class="step">TRY IT</p>
+          <h2 id="bench-title">Trigger page events</h2>
+        </div>
+        <button id="reset" class="quiet" type="button">Reset counts</button>
+      </div>
+      <p class="hint">With protection active, hide-related events should stay at zero. Switch tabs or apps, then return. Move in and out of the target and focus the field to try boundary events.</p>
+
+      <div class="readouts">
+        <div class="readout"><span>Page state</span><strong id="page-state">—</strong></div>
+        <div class="readout"><span>Document focus</span><strong id="focus-state">—</strong></div>
+      </div>
+      <div class="event-list" id="event-list" aria-live="polite">
+        <div class="event-row" data-event="visibilitychange"><span>visibilitychange</span><output>0</output></div>
+        <div class="event-row" data-event="pagehide"><span>pagehide</span><output>0</output></div>
+        <div class="event-row" data-event="focusin"><span>focusin</span><output>0</output></div>
+        <div class="event-row" data-event="focusout"><span>focusout</span><output>0</output></div>
+        <div class="event-row" data-event="blur"><span>blur</span><output>0</output></div>
+        <div class="event-row" data-event="mouseleave"><span>mouseleave</span><output>0</output></div>
+        <div class="event-row" data-event="mouseout"><span>mouseout</span><output>0</output></div>
+        <div class="event-row" data-event="keydown"><span>keydown</span><output>0</output></div>
+      </div>
+      <label class="input-label" for="probe">Keyboard probe</label>
+      <input id="probe" type="text" placeholder="Type here or press a shortcut…" autocomplete="off">
+      <div class="hover-target" id="hover-target" tabindex="0">Move the pointer in and out, or focus this target</div>
+      <p id="test-status" class="test-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <footer>This test runs the extension’s injected event handler in this page. Mode switches apply only here; saved preferences are unchanged.</footer>
+  </main>
+  <script src="../lab.js"></script>
+  <script src="index.js"></script>
+</body>
+</html>

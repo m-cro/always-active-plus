@@ -25,8 +25,11 @@ const mouseValue = (value, max = 2) => {
 for (const id of ['mouseHumanize', 'mouseInterpolation', 'mouseStartSmoothness', 'mouseStopSmoothness']) {
   const slider = document.getElementById(id);
   const output = document.getElementById(id + 'Value');
-  const save = () => chrome.storage.local.set({[id]:
-    Number(slider.value) * (id === 'mouseHumanize' ? 100 : 1)});
+  const save = () => {
+    if (document.getElementById('autoSave').checked !== false) {
+      chrome.storage.local.set({[id]: Number(slider.value) * (id === 'mouseHumanize' ? 100 : 1)});
+    }
+  };
   slider.addEventListener('input', () => {
     output.value = slider.value;
     clearTimeout(slider.saveTimer);
@@ -42,6 +45,7 @@ for (const id of ['mouseHumanize', 'mouseInterpolation', 'mouseStartSmoothness',
 document.getElementById('allSites').addEventListener('change', e => updateHostMode(e.target.checked));
 
 chrome.storage.local.get({
+  'autoSave': true,
   'allSites': true,
   'visibilityState': true,
   'hidden': true,
@@ -54,6 +58,7 @@ chrome.storage.local.get({
   'mouseout': true,
   'keyboard': true,
   'blockedKeys': ['AltGraph'],
+  'blockedKeyStates': [],
   'mouseHumanize': 50,
   'mouseInterpolation': 0.35,
   'mouseStartSmoothness': 0.3,
@@ -62,6 +67,12 @@ chrome.storage.local.get({
   'policies': null,
   'hosts': []
 }, prefs => {
+  document.getElementById('autoSave').checked = prefs.autoSave;
+  if (Array.isArray(prefs.blockedKeyStates) && prefs.blockedKeyStates.length) {
+    prefs.blockedKeys = [...new Set([...prefs.blockedKeys, ...prefs.blockedKeyStates.map(rule =>
+      `${encodeURIComponent(rule.key)}@${(rule.modifiers || []).join('+') || 'none'}`)])];
+    chrome.storage.local.set({blockedKeys: prefs.blockedKeys, blockedKeyStates: []});
+  }
   const legacyAllSites = !prefs.allSites && prefs.hosts.includes('*');
   const allSites = prefs.allSites || legacyAllSites;
   document.getElementById('allSites').checked = allSites;
@@ -96,8 +107,9 @@ chrome.storage.local.get({
 });
 
 
-document.getElementById('save').addEventListener('click', async () => {
+const saveOptions = async () => {
   const prefs = {
+    'autoSave': document.getElementById('autoSave').checked,
     'allSites': document.getElementById('allSites').checked,
     'visibilityState': document.getElementById('visibilityState').checked,
     'hidden': document.getElementById('hidden').checked,
@@ -164,7 +176,27 @@ document.getElementById('save').addEventListener('click', async () => {
     await chrome.storage.local.set(prefs);
     notify('Options saved');
   }
+};
+
+let autoSaveTimer;
+document.getElementById('save').addEventListener('click', () => {
+  clearTimeout(autoSaveTimer);
+  saveOptions();
 });
+document.getElementById('autoSave').addEventListener('change', async event => {
+  clearTimeout(autoSaveTimer);
+  await chrome.storage.local.set({autoSave: event.target.checked});
+  if (event.target.checked) await saveOptions();
+});
+const autoSaveFields = new Set(['allSites', 'blur', 'focus', 'visibility', 'mouseleave',
+  'mouseout', 'keyboard', 'pointercapture', 'redirect', 'log', 'blockedKeys', 'hosts', 'policies']);
+const scheduleAutoSave = event => {
+  if (!autoSaveFields.has(event.target.id) || !document.getElementById('autoSave').checked) return;
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(saveOptions, 400);
+};
+document.addEventListener('input', scheduleAutoSave);
+document.addEventListener('change', scheduleAutoSave);
 
 // reset
 document.getElementById('reset').addEventListener('click', e => {
@@ -192,7 +224,7 @@ document.getElementById('report').addEventListener('click', () => chrome.tabs.cr
 
 // test
 document.getElementById('test').addEventListener('click', () => chrome.tabs.create({
-  url: 'https://webbrowsertools.com/test-always-active/'
+  url: chrome.runtime.getURL('data/test/index.html')
 }));
 
 // links

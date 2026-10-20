@@ -1,0 +1,62 @@
+:root {
+  color-scheme: light;
+  --paper: #f4f1e8;
+  --ink: #202827;
+  --muted: #65706a;
+  --rule: #d4d2c8;
+  --accent: #cb4d2b;
+  --accent-dark: #96351e;
+  --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: linear-gradient(90deg, transparent 0 39px, rgba(44, 59, 54, .045) 40px, transparent 41px), var(--paper);
+  color: var(--ink);
+  font: 15px/1.55 Georgia, "Times New Roman", serif;
+}
+main { width: min(1000px, calc(100% - 48px)); margin: 0 auto; }
+.masthead { padding: 30px 0 28px; border-bottom: 2px solid var(--ink); }
+.back { color: var(--muted); font: 12px var(--mono); text-decoration: none; }
+.back:hover { color: var(--accent-dark); }
+.eyebrow, .step { color: var(--accent-dark); font: 11px var(--mono); letter-spacing: .11em; text-transform: uppercase; }
+.eyebrow { margin: 28px 0 4px; }
+h1 { margin: 0; font-size: clamp(36px, 6vw, 62px); letter-spacing: -.045em; line-height: 1.05; }
+.intro { max-width: 660px; margin: 14px 0 0; color: #48534e; font-size: 18px; }
+h2 { margin: 0; font-size: 25px; letter-spacing: -.02em; }
+.mode-panel { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin: 28px 0 36px; padding: 24px 28px; background: var(--ink); color: #f8f5ed; box-shadow: 7px 7px 0 #d6a28c; }
+.mode-panel .step { margin: 0 0 5px; color: #f29a78; }
+.mode-panel h2 { font-size: 24px; }
+.mode-panel p:last-child { margin: 7px 0 0; color: #c4ccc4; }
+#mode-label { color: #f29a78; }
+.mode-actions { display: flex; gap: 9px; flex-shrink: 0; }
+button { min-height: 38px; padding: 0 14px; border: 1px solid var(--ink); border-radius: 0; cursor: pointer; font: 12px var(--mono); }
+button:focus-visible, input:focus-visible, .hover-target:focus-visible { outline: 3px solid #e18c68; outline-offset: 2px; }
+.primary { background: var(--accent); border-color: var(--accent); color: white; }
+.primary:hover { background: var(--accent-dark); }
+.quiet { background: transparent; color: var(--ink); }
+.quiet:hover { background: #e6e1d5; }
+.bench-heading { display: flex; justify-content: space-between; align-items: end; gap: 16px; }
+.bench-heading .step { margin: 0 0 5px; }
+.bench-heading h2 { font-size: 28px; }
+.hint { margin: 8px 0 18px; color: var(--muted); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+.readout { display: flex; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--rule); background: rgba(255, 253, 246, .6); }
+.readout span { color: var(--muted); font: 11px var(--mono); text-transform: uppercase; }
+.readout strong { font: 12px var(--mono); }
+.event-list { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--ink); border-left: 1px solid var(--rule); }
+.event-row { display: flex; justify-content: space-between; padding: 10px 13px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); background: rgba(255, 253, 246, .68); font: 12px var(--mono); }
+.event-row output { color: var(--accent-dark); font-weight: 700; }
+.input-label { display: block; margin: 20px 0 6px; color: var(--muted); font: 11px var(--mono); text-transform: uppercase; letter-spacing: .08em; }
+#probe { width: 100%; min-height: 48px; padding: 10px 13px; border: 1px solid #92988e; border-radius: 0; background: #fffdf6; color: var(--ink); font: 14px var(--mono); }
+.hover-target { display: grid; min-height: 96px; margin-top: 12px; place-items: center; border: 1px dashed #92988e; background: rgba(255, 253, 246, .55); color: var(--muted); text-align: center; }
+.test-status { min-height: 22px; margin: 11px 0 0; color: var(--accent-dark); font: 12px var(--mono); }
+footer { margin: 24px 0 40px; padding-top: 12px; border-top: 1px solid var(--rule); color: var(--muted); font: 11px var(--mono); }
+@media (max-width: 700px) {
+  main { width: min(100% - 28px, 1000px); }
+  .mode-panel { align-items: start; flex-direction: column; padding: 20px; }
+  .mode-actions { width: 100%; }
+  .mode-actions button { flex: 1; }
+  .event-list, .readouts { grid-template-columns: 1fr; }
+}

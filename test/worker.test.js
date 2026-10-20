@@ -23,6 +23,7 @@ const loadWorker = initialPrefs => {
   const onChanged = hook();
   const onMessage = hook();
   const reloadedTabs = [];
+  const executedScripts = [];
 
   const chrome = {
     action: {
@@ -39,7 +40,8 @@ const loadWorker = initialPrefs => {
       setUninstallURL() {}
     },
     scripting: {
-      async executeScript() {
+      async executeScript(details) {
+        executedScripts.push(details);
         return [{frameId: 0, result: 'example.com'}];
       },
       async registerContentScripts(scripts) {
@@ -52,7 +54,7 @@ const loadWorker = initialPrefs => {
         get(defaults, callback) {
           callback({...defaults, ...prefs});
         },
-        async set(values) {
+        async set(values, callback) {
           const changes = Object.fromEntries(Object.entries(values).map(([key, value]) => [key, {
             oldValue: prefs[key],
             newValue: value
@@ -60,6 +62,7 @@ const loadWorker = initialPrefs => {
           Object.assign(prefs, values);
           storageWrites.push(values);
           for (const listener of onChanged.listeners) listener(changes, 'local');
+          callback?.();
         }
       },
       onChanged
@@ -92,6 +95,7 @@ const loadWorker = initialPrefs => {
     registrations,
     storageWrites,
     reloadedTabs,
+    executedScripts,
     message(request) {
       return new Promise(resolve => onMessage.listeners[0](request, {}, resolve));
     }
@@ -168,9 +172,11 @@ test('popup toggle adds and removes exceptions in all-sites mode', async () => {
     allSites: true,
     hosts: ['example.com']
   });
-  assert.deepEqual(worker.reloadedTabs, [1]);
+  assert.deepEqual(worker.reloadedTabs, []);
+  assert.equal(worker.executedScripts.length, 1);
 
   assert.equal((await worker.message(request)).enabled, true);
+  assert.equal(worker.executedScripts.length, 4);
   assert.deepEqual(normalize(worker.storageWrites.at(-1)), {
     allSites: true,
     hosts: []

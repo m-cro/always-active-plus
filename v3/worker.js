@@ -139,6 +139,38 @@ const hostMatches = (host, rule) => {
   return host === rule;
 };
 
+const applyToOpenTab = async (tabId, enabled) => {
+  if (enabled) {
+    // Reuse the registered scripts' ordering so the page world can see its
+    // settings port as soon as protection is installed.
+    await chrome.scripting.executeScript({
+      target: {tabId, allFrames: true},
+      files: ['data/inject/isolated.js'],
+      world: 'ISOLATED',
+      injectImmediately: true
+    });
+    await chrome.scripting.executeScript({
+      target: {tabId, allFrames: true},
+      files: ['data/inject/main.js'],
+      world: 'MAIN',
+      injectImmediately: true
+    });
+  }
+
+  // The document's event hooks read this value live, so disabling a site
+  // takes effect without waiting for a navigation either.
+  await chrome.scripting.executeScript({
+    target: {tabId, allFrames: true},
+    world: 'ISOLATED',
+    injectImmediately: true,
+    func: value => {
+      const port = document.getElementById('lwys-ctv-port');
+      if (port) port.dataset.enabled = String(value);
+    },
+    args: [enabled]
+  });
+};
+
 const getSiteState = async url => {
   let host;
   try {
@@ -178,19 +210,24 @@ const toggleSite = async (tabId, url) => {
   const error = await validate(hosts);
   if (error) return {ok: false, message: error};
 
-  return new Promise(resolve => {
-    activate.actions.push(() => {
-      chrome.tabs.reload(tabId);
-      resolve({
-        ok: true,
-        enabled: !current.enabled,
-        host: current.host,
-        allSites: current.allSites,
-        ruleCount: hosts.length
-      });
-    });
-    chrome.storage.local.set({allSites: prefs.allSites, hosts});
-  });
+  await new Promise(resolve => chrome.storage.local.set({allSites: prefs.allSites, hosts}, resolve));
+  const enabled = !current.enabled;
+  try {
+    await applyToOpenTab(tabId, enabled);
+  }
+  catch (error) {
+    return {
+      ok: false,
+      message: `The site rule was saved, but could not be applied to this tab: ${error.message}. Reload the page to apply it.`
+    };
+  }
+  return {
+    ok: true,
+    enabled,
+    host: current.host,
+    allSites: current.allSites,
+    ruleCount: hosts.length
+  };
 };
 
 /* messaging */

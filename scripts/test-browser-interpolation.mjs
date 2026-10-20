@@ -169,7 +169,10 @@ try {
       enabled: document.getElementById('lwys-ctv-port').dataset.enabled,
       interpolation: document.getElementById('lwys-ctv-port').dataset.mouseInterpolation
     })`);
-    assert.deepEqual(settings, {connected: true, enabled: 'true', interpolation: '0.13'});
+    assert.deepEqual(settings, {connected: true, enabled: 'true', interpolation: '0.35'});
+    // These assertions measure interpolation timing; randomized humanization
+    // changes individual step sizes and has separate behavior coverage.
+    await evaluate("Object.assign(document.getElementById('lwys-ctv-port').dataset, {mouseHumanize: '0', mouseInterpolation: '0.13'})");
   };
   const moves = () => evaluate('window.testMoves');
 
@@ -344,7 +347,9 @@ try {
   }
   else {
   await move(100, 100);
-  await move(150, 100);
+  // Seed ordinary movement below the overlay-gap distance threshold so slow
+  // DevTools input cannot start interpolation before the intentional exit.
+  for (let x = 110; x <= 150; x += 10) await move(x, 100);
   await move(520, 100); // Chrome reports this off-page coordinate on mouseout.
   await evaluate("window.dispatchEvent(new Event('blur'))");
   await sleep(30);
@@ -422,7 +427,7 @@ try {
   assert.ok(afterClick.some(e => !e.trusted && e.x === 420 && e.y === 250),
     'Click did not snap the generated cursor');
   assert.ok(afterClick.some(e => e.trusted && e.x === 430 && e.y === 260),
-    'Native mousemove did not resume after click');
+    `Native mousemove did not resume after click: ${JSON.stringify(afterClick)}`);
   console.log('PASS: click snaps interpolation and native mousemove resumes');
 
   await setup();

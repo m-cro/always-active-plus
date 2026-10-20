@@ -2,7 +2,11 @@
 
 This extension protects against web pages tracking the activity state of the page. Some websites use this track to only offer services when the tab is active. By installing this extension a small script is injected into every webpage which overwrites the "document.visibilityState", and "document.hidden" properties to pretend the tab is always in the active state (document.visibilityState = 'visible' and document.hidden = false).
 
-It also suppresses DOM event paths that can expose a transition to another app: focus/blur and focus-boundary events, visibility changes, page hiding, pointer capture loss, and mouse/pointer boundary events caused by moving onto an external overlay. Configure keyboard events to block from the options page using a `KeyboardEvent.key`, `KeyboardEvent.code`, or numeric `keyCode` value; `AltGraph` is blocked by default. A hostname policy can opt out with `"keyboard"`, `"mouseleave"`, or `"mouseout"`.
+It also suppresses DOM event paths that can expose a transition to another app: focus/blur and focus-boundary events, visibility changes, page hiding, pointer capture loss, and mouse/pointer boundary events caused by moving onto an external overlay. Configure keyboard events to block from the options page using a `KeyboardEvent.key`, `KeyboardEvent.code`, numeric `keyCode`, or modifier name. Modifier names match events while held, and `Alt+Shift` matches that combination. `AltGraph` is blocked by default. A hostname policy can opt out with `"keyboard"`, `"mouseleave"`, or `"mouseout"`.
+
+Use **Test Rules** in the options page to open the built-in protection test page. Its active/paused controls affect that page only. The Keyboard Event Lab is built into the options page under **Blocked Keyboard Events**. Capture keydown, keypress, and keyup events there, then select rows and choose whether to block keys, modifier states, combinations, or exact event signatures.
+
+Settings save automatically by default. Turn off **Automatically save settings** to apply edits with **Save Options**. The lab’s **Block key + modifier state** action adds entries directly to **Blocked key values**, such as `Shift@Alt+Shift` or `a@none` for a key with no active modifiers.
 
 The options page has mouse re-entry controls. Humanize ranges from 0–1 and adds a bounded randomized curve and slight timing variation. Interpolation at 0 leaves mouse movement immediate; higher values make generated mouse and pointer move events follow a smooth curve through buffered positions more slowly after the browser loses focus. Interpolation ranges from 0–1, while start and stop smoothness range from 0–2. When another app covers the browser without sending an exit event, a pause in mouse input followed by a distant move starts the same smoothing from the last position seen by the page. Start and stop smoothness control acceleration and braking. The defaults are 0.5 humanize, 0.35 interpolation, 0.3 start smoothness, and 0.3 stop smoothness. A second return joins the unfinished path in order. A mouse click ends interpolation and moves the generated cursor position to the click. Native movement resumes when the generated cursor catches up.
 
@@ -18,6 +22,7 @@ exceptions.
 ```sh
 node --test test/*.test.js
 node scripts/test-browser-interpolation.mjs
+node scripts/test-browser-keyboard-lab.mjs
 npx --yes web-ext@10.5.0 lint --source-dir v3
 npx --yes web-ext@10.5.0 build --source-dir v3
 ```

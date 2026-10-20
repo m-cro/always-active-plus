@@ -1,12 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="utf-8">
   <title>Options :: Always Active Plus</title>
   <link rel="stylesheet" type="text/css" href="index.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
   <div class="grid">
+    <label for="autoSave">Automatically save settings</label>
+    <input type="checkbox" id="autoSave" checked>
     <label for="allSites">Enable on all sites by default (use hostnames as exceptions)</label>
     <input type="checkbox" id="allSites">
     <div class="disabled" style="display: contents;">
@@ -49,18 +52,66 @@
     <input type="range" id="mouseStopSmoothness" min="0" max="2" step="0.01" value="0.3">
   </div>
   <h1>Blocked Keyboard Events</h1>
-  <p>Comma-separated <code>KeyboardEvent.key</code>, <code>KeyboardEvent.code</code>, or numeric <code>keyCode</code> values.</p>
-  <input type="text" id="blockedKeys" placeholder="AltGraph, AltRight, 225">
+  <p>Comma-separated <code>KeyboardEvent.key</code>, <code>KeyboardEvent.code</code>, numeric <code>keyCode</code>, or modifier names. Use <code>Alt+Shift</code> to match a modifier combination.</p>
+  <label for="blockedKeys">Blocked key values</label>
+  <input type="text" id="blockedKeys" placeholder="AltGraph, AltRight, 225" aria-describedby="blocked-keys-help">
+  <p id="blocked-keys-help">Modifier names such as Shift or Alt match events while that modifier is held. Commas mean either modifier; use + for combinations, such as Alt+Shift. Use Shift@Alt+Shift to block only Shift with that exact modifier state, or a@none for a without modifiers.</p>
+  <section class="keyboard-lab" aria-labelledby="keyboard-lab-title">
+    <div class="keyboard-lab-heading">
+      <div>
+        <p class="keyboard-lab-kicker">INPUT TOOLS / CAPTURE</p>
+        <h2 id="keyboard-lab-title">Keyboard Event Lab <span class="keyboard-event-count" id="event-count">0</span></h2>
+        <p>Click the field and press the key or combination you want to inspect. Select captured rows, then choose a blocking rule.</p>
+      </div>
+      <div class="keyboard-lab-actions">
+        <button id="clear-events" type="button">Clear captures</button>
+        <button id="block-keys" type="button">Block selected keys</button>
+        <button id="block-combinations" type="button">Block modifier combinations</button>
+        <button id="block-key-states" type="button">Block key + modifier state</button>
+        <button id="save-events" type="button">Block exact events</button>
+      </div>
+    </div>
+    <div class="keyboard-capture-panel">
+      <label for="key-input">Test field</label>
+      <input id="key-input" type="text" autocomplete="off" spellcheck="false" placeholder="Click here, then press keys…">
+      <p class="keyboard-capture-status"><span aria-hidden="true"></span><span>Listening for keydown, keypress, and keyup</span></p>
+    </div>
+    <p class="keyboard-lab-hint">This field uses the current Blocked key values above, including unsaved edits. Blocked events are omitted from the table while keyboard protection is enabled. Key values apply across event types; modifier keys such as Shift also block every event while held. Modifier combinations block events with all listed modifiers active. Key + modifier state targets that key only when the active state matches exactly, such as Shift while Alt+Shift is active. Exact events also match event type, code, and location. Click a column heading to sort.</p>
+    <div class="keyboard-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col"><span class="keyboard-sr-only">Select</span></th>
+            <th scope="col" aria-sort="none"><button class="keyboard-sort" data-sort="type" type="button">Event</button></th>
+            <th scope="col" aria-sort="none"><button class="keyboard-sort" data-sort="key" type="button">Key</button></th>
+            <th scope="col" aria-sort="none"><button class="keyboard-sort" data-sort="code" type="button">Code</button></th>
+            <th scope="col" aria-sort="none"><button class="keyboard-sort" data-sort="keyCode" type="button">keyCode</button></th>
+            <th scope="col" aria-sort="none"><button class="keyboard-sort" data-sort="location" type="button">Location</button></th>
+            <th scope="col" aria-sort="none"><button class="keyboard-sort" data-sort="modifiers" type="button">Modifiers</button></th>
+            <th scope="col" aria-sort="none"><button class="keyboard-sort" data-sort="repeat" type="button">Repeat</button></th>
+            <th scope="col" aria-sort="none"><button class="keyboard-sort" data-sort="seen" type="button">Seen</button></th>
+          </tr>
+        </thead>
+        <tbody id="events">
+          <tr class="keyboard-empty-row"><td colspan="9">No events captured yet. Try a key in the field above.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p id="save-status" class="keyboard-save-status" role="status" aria-live="polite"></p>
+  </section>
   <h1>List of Hostnames</h1>
   <p id="host-mode-description"></p>
-  <textarea id="hosts" rows="8" placeholder="Hostnames separated by commas. Use the all-sites toggle to choose whether these are inclusions or exceptions. Example:
+  <label for="hosts">Hostnames</label>
+  <textarea id="hosts" rows="8" aria-describedby="host-mode-description" placeholder="Hostnames separated by commas. Use the all-sites toggle to choose whether these are inclusions or exceptions. Example:
 
 example.com, *.example.com, www.example.com"></textarea>
   <h1><a data-href="faq6" target="_blank">Policies</a></h1>
-  <textarea id="policies" rows="10" placeholder='A JSON object to prevent blocking of some events that conflict with particular hostnames. Example:
+  <label for="policies">Hostname event policies</label>
+  <textarea id="policies" rows="10" aria-describedby="policies-help" placeholder='A JSON object to prevent blocking of some events that conflict with particular hostnames. Example:
 {
   "docs.google.com": ["blur", "keyboard"]
 }'></textarea>
+  <p id="policies-help">Optional JSON mapping hostnames to event names that should remain unblocked.</p>
 
   <p>
     <input type="button" id="support" value="Project Home">
@@ -70,8 +121,9 @@ example.com, *.example.com, www.example.com"></textarea>
   <div>
     <input type="button" id="reset" value="Factory Reset">
     <input type="button" id="save" value="Save Options">
-    <span id="toast"></span>
+    <span id="toast" role="status" aria-live="polite"></span>
   </div>
   <script type="text/javascript" src="index.js"></script>
+  <script type="text/javascript" src="keyboard-lab.js"></script>
 </body>
 </html>
