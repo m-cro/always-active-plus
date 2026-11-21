@@ -54,6 +54,8 @@ chrome.storage.local.get({
   'redirect': true,
   'visibility': true,
   'pointercapture': true,
+  'fullscreen': false,
+  'badge': true,
   'mouseleave': true,
   'mouseout': true,
   'keyboard': true,
@@ -82,6 +84,8 @@ chrome.storage.local.get({
   document.getElementById('redirect').checked = prefs.redirect;
   document.getElementById('visibility').checked = prefs.visibility;
   document.getElementById('pointercapture').checked = prefs.pointercapture;
+  document.getElementById('fullscreen').checked = prefs.fullscreen;
+  document.getElementById('badge').checked = prefs.badge;
   document.getElementById('blur').checked = prefs.blur;
   document.getElementById('mouseleave').checked = prefs.mouseleave;
   document.getElementById('mouseout').checked = prefs.mouseout;
@@ -127,6 +131,8 @@ const saveOptions = async () => {
     'mouseStopSmoothness': Number(document.getElementById('mouseStopSmoothness').value),
     'visibility': document.getElementById('visibility').checked,
     'pointercapture': document.getElementById('pointercapture').checked,
+    'fullscreen': document.getElementById('fullscreen').checked,
+    'badge': document.getElementById('badge').checked,
     'focus': document.getElementById('focus').checked,
     'redirect': document.getElementById('redirect').checked,
     'log': document.getElementById('log').checked
@@ -189,7 +195,7 @@ document.getElementById('autoSave').addEventListener('change', async event => {
   if (event.target.checked) await saveOptions();
 });
 const autoSaveFields = new Set(['allSites', 'blur', 'focus', 'visibility', 'mouseleave',
-  'mouseout', 'keyboard', 'pointercapture', 'redirect', 'log', 'blockedKeys', 'hosts', 'policies']);
+  'mouseout', 'keyboard', 'pointercapture', 'fullscreen', 'badge', 'redirect', 'log', 'blockedKeys', 'hosts', 'policies']);
 const scheduleAutoSave = event => {
   if (!autoSaveFields.has(event.target.id) || !document.getElementById('autoSave').checked) return;
   clearTimeout(autoSaveTimer);
@@ -198,10 +204,13 @@ const scheduleAutoSave = event => {
 document.addEventListener('input', scheduleAutoSave);
 document.addEventListener('change', scheduleAutoSave);
 
-// reset
-document.getElementById('reset').addEventListener('click', e => {
-  if (e.detail === 1) {
-    notify('Double-click to reset!');
+// reset: a second activation within a few seconds confirms it. Counting clicks
+// via event.detail does not work for keyboard users (detail is 0 for Enter/Space).
+let resetArmedAt = 0;
+document.getElementById('reset').addEventListener('click', () => {
+  if (Date.now() - resetArmedAt > 3000) {
+    resetArmedAt = Date.now();
+    notify('Activate Factory Reset again to confirm.', 3000);
   }
   else {
     localStorage.clear();

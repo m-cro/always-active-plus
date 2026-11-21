@@ -44,6 +44,7 @@ const update = () => chrome.storage.local.get({
   'mouseStopSmoothness': 0.3,
   'visibility': true,
   'pointercapture': true,
+  'fullscreen': false,
   'allSites': true,
   'hosts': [],
   'policies': null
@@ -91,6 +92,10 @@ const update = () => chrome.storage.local.get({
   }
   port.dataset.visibility = policy.includes('visibility') ? false : prefs.visibility;
   port.dataset.pointercapture = policy.includes('pointercapture') ? false : prefs.pointercapture;
+  port.dataset.fullscreen = policy.includes('fullscreen') ? false : prefs.fullscreen;
+  // The page-world script installs or removes its fullscreen hooks on this
+  // event. It is dispatched after every update so either script may load first.
+  port.dispatchEvent(new Event('fs'));
 });
 update();
 chrome.storage.onChanged.addListener(update);

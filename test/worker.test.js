@@ -14,8 +14,11 @@ const hook = () => ({
 const flush = () => new Promise(resolve => setImmediate(resolve));
 const normalize = value => JSON.parse(JSON.stringify(value));
 
-const loadWorker = initialPrefs => {
+const loadWorker = (initialPrefs, openTabs = [{id: 1}]) => {
   const prefs = {...initialPrefs};
+  const toolbar = new Map();
+  const tabOnActivated = hook();
+  const tabOnUpdated = hook();
   const registrations = [];
   const storageWrites = [];
   const onStartup = hook();
@@ -27,9 +30,10 @@ const loadWorker = initialPrefs => {
 
   const chrome = {
     action: {
-      setBadgeText() {},
+      setBadgeText({tabId, text}) { toolbar.set(tabId, {...toolbar.get(tabId), text}); },
+      setBadgeBackgroundColor({tabId, color}) { toolbar.set(tabId, {...toolbar.get(tabId), color}); },
       setIcon() {},
-      setTitle() {}
+      setTitle({tabId, title}) { toolbar.set(tabId, {...toolbar.get(tabId), title}); }
     },
     management: {},
     runtime: {
@@ -68,7 +72,10 @@ const loadWorker = initialPrefs => {
       onChanged
     },
     tabs: {
-      query: async () => [{id: 1}],
+      query: async () => openTabs,
+      get: async id => openTabs.find(tab => tab.id === id),
+      onActivated: tabOnActivated,
+      onUpdated: tabOnUpdated,
       reload(tabId) {
         reloadedTabs.push(tabId);
       }
@@ -90,7 +97,8 @@ const loadWorker = initialPrefs => {
   vm.runInContext(source, context);
 
   return {
-    hooks: {onChanged, onMessage, onStartup},
+    hooks: {onChanged, onMessage, onStartup, tabOnActivated, tabOnUpdated},
+    toolbar,
     prefs,
     registrations,
     storageWrites,
@@ -215,4 +223,79 @@ test('popup toggle migrates legacy wildcard storage before adding an exception',
     allSites: true,
     hosts: ['example.com']
   });
+});
+
+test('the toolbar button announces the state of each tab', async () => {
+  const worker = loadWorker({allSites: true, enabled: true, hosts: ['blocked.test']}, [
+    {id: 1, url: 'https://example.com/page'},
+    {id: 2, url: 'https://blocked.test/'},
+    {id: 3, url: 'about:blank'}
+  ]);
+
+  worker.hooks.onStartup.listeners.at(-1)();
+  await flush();
+
+  const [on, off, unsupported] = [1, 2, 3].map(id => normalize(worker.toolbar.get(id)));
+  assert.equal(on.text, 'ON');
+  assert.match(on.title, /^Enabled\. example\.com stays active/);
+  assert.equal(off.text, 'OFF');
+  assert.match(off.title, /^Not enabled\. blocked\.test is not kept active/);
+  assert.notDeepEqual(on.color, off.color);
+  assert.equal(unsupported.text, '');
+  assert.match(unsupported.title, /cannot control this page/);
+});
+
+test('the toolbar button follows allow-list mode, global pause and rule changes', async () => {
+  const worker = loadWorker({allSites: false, enabled: true, hosts: ['example.com']}, [
+    {id: 1, url: 'https://example.com/'},
+    {id: 2, url: 'https://other.test/'}
+  ]);
+
+  worker.hooks.onStartup.listeners.at(-1)();
+  await flush();
+  assert.deepEqual([1, 2].map(id => worker.toolbar.get(id).text), ['ON', 'OFF']);
+
+  worker.prefs.enabled = false;
+  worker.hooks.onChanged.listeners.at(-1)({enabled: {newValue: false}});
+  await flush();
+  assert.deepEqual([1, 2].map(id => worker.toolbar.get(id).text), ['OFF', 'OFF']);
+  assert.match(worker.toolbar.get(1).title, /is paused/);
+
+  worker.prefs.enabled = true;
+  worker.prefs.hosts = ['other.test'];
+  worker.hooks.onChanged.listeners.at(-1)({hosts: {newValue: ['other.test']}});
+  await flush();
+  assert.deepEqual([1, 2].map(id => worker.toolbar.get(id).text), ['OFF', 'ON']);
+});
+
+test('the toolbar button is repainted when a tab is activated or navigates', async () => {
+  const worker = loadWorker({allSites: true, enabled: true, hosts: []}, [
+    {id: 5, url: 'https://example.com/'}
+  ]);
+
+  worker.hooks.tabOnActivated.listeners[0]({tabId: 5});
+  await flush();
+  assert.equal(worker.toolbar.get(5).text, 'ON');
+
+  worker.toolbar.delete(5);
+  worker.hooks.tabOnUpdated.listeners[0](5, {status: 'loading'}, {id: 5, url: 'https://example.com/'});
+  await flush();
+  assert.equal(worker.toolbar.get(5).text, 'ON');
+
+  worker.toolbar.delete(5);
+  worker.hooks.tabOnUpdated.listeners[0](5, {title: 'unrelated'}, {id: 5, url: 'https://example.com/'});
+  await flush();
+  assert.equal(worker.toolbar.has(5), false);
+});
+
+test('the badge text can be turned off while the accessible title stays', async () => {
+  const worker = loadWorker({allSites: true, enabled: true, hosts: [], badge: false}, [
+    {id: 1, url: 'https://example.com/'}
+  ]);
+
+  worker.hooks.onStartup.listeners.at(-1)();
+  await flush();
+
+  assert.equal(worker.toolbar.get(1).text, '');
+  assert.match(worker.toolbar.get(1).title, /^Enabled\./);
 });

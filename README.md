@@ -4,6 +4,10 @@ This extension protects against web pages tracking the activity state of the pag
 
 It also suppresses DOM event paths that can expose a transition to another app: focus/blur and focus-boundary events, visibility changes, page hiding, pointer capture loss, and mouse/pointer boundary events caused by moving onto an external overlay. Configure keyboard events to block from the options page using a `KeyboardEvent.key`, `KeyboardEvent.code`, numeric `keyCode`, or modifier name. Modifier names match events while held, and `Alt+Shift` matches that combination. `AltGraph` is blocked by default. A hostname policy can opt out with `"keyboard"`, `"mouseleave"`, or `"mouseout"`.
 
+Fullscreen protection is optional and off by default (**Keep the fullscreen state when the page is hidden**, experimental). Browsers force-exit fullscreen when its tab is hidden; with this enabled the page keeps seeing its last fullscreen state, and the resulting `fullscreenchange`/`fullscreenerror` events are blocked, only while the tab is hidden. A hostname policy can opt out with `"fullscreen"`.
+
+The toolbar button reports its state without relying on color or the popup: its badge reads `ON` or `OFF` for the current tab (turn it off with **Show the ON/OFF badge text on the extension button**), and its accessible title names the site and whether it is kept active.
+
 Use **Test Rules** in the options page to open the built-in protection test page. Its active/paused controls affect that page only. The Keyboard Event Lab is built into the options page under **Blocked Keyboard Events**. Capture keydown, keypress, and keyup events there, then select rows and choose whether to block keys, modifier states, combinations, or exact event signatures.
 
 Settings save automatically by default. Turn off **Automatically save settings** to apply edits with **Save Options**. The lab’s **Block key + modifier state** action adds entries directly to **Blocked key values**, such as `Shift@Alt+Shift` or `a@none` for a key with no active modifiers.

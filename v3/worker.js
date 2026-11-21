@@ -230,6 +230,75 @@ const toggleSite = async (tabId, url) => {
   };
 };
 
+/* non-visual state indication (accessibility)
+   The toolbar button's title is its accessible name and the badge is its short
+   status, so both always describe the current tab. The URL is readable without
+   the "tabs" permission because of the host permissions. */
+const BADGE_COLORS = {
+  on: [27, 94, 32, 255],
+  off: [176, 24, 24, 255]
+};
+
+let showBadge = true;
+chrome.storage.local.get({badge: true}, prefs => showBadge = prefs.badge);
+
+const describeState = state => {
+  if (!state.available) {
+    return {
+      text: '',
+      title: 'Always Active Plus cannot control this page. Open a regular website to use it.'
+    };
+  }
+  if (!state.globallyEnabled) {
+    return {
+      text: 'OFF',
+      color: BADGE_COLORS.off,
+      title: `Always Active Plus is paused. ${state.host} is not kept active. Open the popup to resume it.`
+    };
+  }
+  return state.enabled ? {
+    text: 'ON',
+    color: BADGE_COLORS.on,
+    title: `Enabled. ${state.host} stays active while this tab is in the background. Open the popup to pause it for this site.`
+  } : {
+    text: 'OFF',
+    color: BADGE_COLORS.off,
+    title: `Not enabled. ${state.host} is not kept active. Open the popup to enable it for this site.`
+  };
+};
+
+const paintTab = async tab => {
+  if (!tab?.id) return;
+  try {
+    const {text, color, title} = describeState(await getSiteState(tab.url));
+    await chrome.action.setBadgeText({tabId: tab.id, text: showBadge ? text : ''});
+    if (color) await chrome.action.setBadgeBackgroundColor({tabId: tab.id, color});
+    await chrome.action.setTitle({tabId: tab.id, title});
+  }
+  catch (error) {
+    // The tab was closed or navigated away while painting.
+  }
+};
+
+const paintAllTabs = async () => {
+  try {
+    await Promise.all((await chrome.tabs.query({})).map(paintTab));
+  }
+  catch (error) {}
+};
+
+chrome.tabs.onActivated.addListener(({tabId}) => chrome.tabs.get(tabId).then(paintTab, () => {}));
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // Tab-specific badge and title are cleared by the browser on navigation.
+  if (changeInfo.url || changeInfo.status) paintTab(tab);
+});
+chrome.storage.onChanged.addListener(ps => {
+  if (ps.badge) showBadge = ps.badge.newValue;
+  if (ps.badge || ps.enabled || ps.allSites || ps.hosts) paintAllTabs();
+});
+chrome.runtime.onStartup.addListener(paintAllTabs);
+chrome.runtime.onInstalled.addListener(paintAllTabs);
+
 /* messaging */
 chrome.runtime.onMessage.addListener((request, sender, response) => {
   if (request.method === 'site-state') {

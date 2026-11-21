@@ -155,6 +155,94 @@
   overrideDocumentGetter('webkitHidden', () => port.dataset.enabled === 'false' ?
     Boolean(original('webkitHidden') ?? original('hidden')) : false);
 
+  /* fullscreen (optional)
+     Browsers force-exit fullscreen when its tab is hidden. While the page is
+     hidden, keep reporting the last real fullscreen state and swallow the
+     resulting fullscreenchange/fullscreenerror events. Nothing is touched until
+     the preference is enabled, and turning it off removes every override. */
+  {
+    const names = ['fullscreenElement', 'webkitFullscreenElement', 'fullscreen', 'webkitIsFullScreen'];
+    // Only override what this browser implements, so feature detection of the
+    // prefixed API keeps giving the same answer.
+    const natives = Object.fromEntries(names
+      .map(name => [name, Object.getOwnPropertyDescriptor(Document.prototype, name)])
+      .filter(([, descriptor]) => descriptor?.get));
+    const source = natives.fullscreenElement || natives.webkitFullscreenElement;
+    if (source) {
+      const recorded = {element: null};
+      const realElement = () => {
+        try {
+          return source.get.call(document);
+        }
+        catch (e) {
+          return null;
+        }
+      };
+      const track = () => {
+        recorded.element = realElement();
+      };
+      const protecting = () => port.dataset.enabled === 'true' &&
+        port.dataset.fullscreen === 'true' && Boolean(original('hidden'));
+      const element = () => protecting() ? recorded.element : realElement();
+      const getters = {
+        fullscreenElement: element,
+        webkitFullscreenElement: element,
+        fullscreen: () => Boolean(element()),
+        webkitIsFullScreen: () => Boolean(element())
+      };
+
+      // Real changes are always recorded; the page only misses the ones that
+      // happen while it is hidden.
+      const onchange = e => {
+        if (!protecting()) {
+          track();
+          return;
+        }
+        return block(e);
+      };
+      const onerror = e => {
+        if (protecting()) {
+          return block(e);
+        }
+      };
+      const types = [
+        ['fullscreenchange', onchange], ['webkitfullscreenchange', onchange],
+        ['fullscreenerror', onerror], ['webkitfullscreenerror', onerror]
+      ];
+
+      let installed = false;
+      const toggle = () => {
+        const wanted = port.dataset.fullscreen === 'true';
+        if (wanted === installed) {
+          return;
+        }
+        installed = wanted;
+        if (wanted) {
+          track();
+          for (const name of Object.keys(natives)) {
+            Object.defineProperty(document, name, {configurable: true, get: getters[name]});
+          }
+          for (const [type, listener] of types) {
+            document.addEventListener(type, listener, true);
+            window.addEventListener(type, listener, true);
+          }
+        }
+        else {
+          for (const [type, listener] of types) {
+            document.removeEventListener(type, listener, true);
+            window.removeEventListener(type, listener, true);
+          }
+          for (const name of Object.keys(natives)) {
+            delete document[name];
+          }
+          recorded.element = null;
+        }
+      };
+      toggle();
+      port.addEventListener('fs', toggle);
+    }
+  }
+
   /* focus */
   let focusReentry = false;
   let focusGap;

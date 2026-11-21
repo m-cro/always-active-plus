@@ -39,8 +39,24 @@ a:visited {
   text-decoration: none;
 }
 h1 {
+  font-size: 130%;
+  margin: 20px 0 10px;
+}
+h2 {
   font-size: 110%;
-  margin-top: 20px;
+  margin: 20px 0 10px;
+}
+fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+legend {
+  padding: 0;
+}
+legend h2 {
+  margin: 20px 0 10px;
 }
 hr {
   border: none;
@@ -83,7 +99,7 @@ hr {
   font-size: 11px;
   text-transform: uppercase;
 }
-.keyboard-lab h2 {
+.keyboard-lab h3 {
   margin: 0 0 5px;
   font-size: 110%;
 }

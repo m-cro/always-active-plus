@@ -15,6 +15,10 @@ class EventTarget {
     this.listeners.set(type, listeners);
   }
 
+  removeEventListener(type, listener) {
+    this.listeners.set(type, (this.listeners.get(type) || []).filter(item => item !== listener));
+  }
+
   dispatchEvent(event) {
     event.target ||= this;
     for (const listener of this.listeners.get(event.type) || []) {
@@ -77,7 +81,15 @@ Object.defineProperty(Document.prototype, 'hidden', {
   }
 });
 
+Object.defineProperty(Document.prototype, 'fullscreenElement', {
+  configurable: true,
+  get() {
+    return this._fullscreen || null;
+  }
+});
+
 const nativeDocumentDescriptors = {
+  fullscreenElement: Object.getOwnPropertyDescriptor(Document.prototype, 'fullscreenElement'),
   hasFocus: Object.getOwnPropertyDescriptor(Document.prototype, 'hasFocus'),
   hidden: Object.getOwnPropertyDescriptor(Document.prototype, 'hidden'),
   visibilityState: Object.getOwnPropertyDescriptor(Document.prototype, 'visibilityState')
@@ -649,4 +661,107 @@ test('blocks only captured keyboard event signatures', () => {
 
   assert.equal(selectedEvent.defaultPrevented, true);
   assert.equal(otherKey.defaultPrevented, undefined);
+});
+
+const fullscreenSetup = (options = {}) => {
+  const injection = loadInjection(options);
+  const page = {changes: 0, errors: 0};
+  const enable = (value = 'true') => {
+    injection.port.dataset.fullscreen = value;
+    injection.port.dispatchEvent(createEvent('fs'));
+  };
+  const listen = () => {
+    // Registered after the extension's own listeners, like a page script.
+    injection.document.addEventListener('fullscreenchange', () => page.changes++);
+    injection.document.addEventListener('fullscreenerror', () => page.errors++);
+  };
+  return {...injection, page, enable, listen};
+};
+
+test('fullscreen protection does nothing until it is enabled', () => {
+  const {document} = fullscreenSetup();
+
+  assert.equal(Object.hasOwn(document, 'fullscreenElement'), false);
+  assert.equal(document.listeners.get('fullscreenchange')?.length || 0, 0);
+});
+
+test('fullscreen protection keeps the fullscreen state and hides its end while the page is hidden', () => {
+  const {document, enable, listen, page} = fullscreenSetup();
+  const video = {};
+  document._fullscreen = video;
+  enable();
+  listen();
+
+  // The browser force-exits fullscreen once the tab is hidden.
+  document._hidden = true;
+  document._fullscreen = null;
+  for (const type of ['fullscreenchange', 'fullscreenerror']) {
+    const event = createEvent(type);
+    document.dispatchEvent(event);
+    assert.equal(event.defaultPrevented, true, type);
+  }
+
+  assert.equal(page.changes, 0);
+  assert.equal(page.errors, 0);
+  assert.equal(document.fullscreenElement, video);
+
+  // Once visible again the page sees the real state.
+  document._hidden = false;
+  assert.equal(document.fullscreenElement, null);
+});
+
+test('fullscreen changes while the page is visible pass through and are recorded', () => {
+  const {document, enable, listen, page} = fullscreenSetup();
+  enable();
+  listen();
+
+  const video = {};
+  document._fullscreen = video;
+  const entered = createEvent('fullscreenchange');
+  document.dispatchEvent(entered);
+  assert.equal(entered.defaultPrevented, undefined);
+  assert.equal(page.changes, 1);
+  assert.equal(document.fullscreenElement, video);
+
+  // A user leaving fullscreen while visible is never hidden from the page.
+  document._fullscreen = null;
+  document.dispatchEvent(createEvent('fullscreenchange'));
+  document._hidden = true;
+  assert.equal(page.changes, 2);
+  assert.equal(document.fullscreenElement, null);
+});
+
+test('fullscreen protection is removed again when it is disabled or the site is off', () => {
+  const {document, port, enable, listen, page} = fullscreenSetup();
+  const video = {};
+  document._fullscreen = video;
+  enable();
+  listen();
+  document._hidden = true;
+  document._fullscreen = null;
+  assert.equal(document.fullscreenElement, video);
+
+  port.dataset.enabled = 'false';
+  assert.equal(document.fullscreenElement, null);
+  port.dataset.enabled = 'true';
+
+  enable('false');
+  assert.equal(Object.hasOwn(document, 'fullscreenElement'), false);
+  document.dispatchEvent(createEvent('fullscreenchange'));
+  assert.equal(page.changes, 1);
+});
+
+test('the isolated script delivers the fullscreen preference and honors per-site policies', () => {
+  const {document, port, setPreference} = fullscreenSetup({loadIsolated: true});
+
+  assert.equal(port.dataset.fullscreen, 'false');
+  assert.equal(Object.hasOwn(document, 'fullscreenElement'), false);
+
+  setPreference('fullscreen', true);
+  assert.equal(port.dataset.fullscreen, 'true');
+  assert.equal(Object.hasOwn(document, 'fullscreenElement'), true);
+
+  setPreference('policies', {'test.invalid': ['fullscreen']});
+  assert.equal(port.dataset.fullscreen, 'false');
+  assert.equal(Object.hasOwn(document, 'fullscreenElement'), false);
 });

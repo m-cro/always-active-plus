@@ -7,51 +7,66 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-  <div class="grid">
-    <label for="autoSave">Automatically save settings</label>
-    <input type="checkbox" id="autoSave" checked>
-    <label for="allSites">Enable on all sites by default (use hostnames as exceptions)</label>
-    <input type="checkbox" id="allSites">
-    <div class="disabled" style="display: contents;">
-      <label for="visibilityState">Overwrite "document.visibilityState"</label>
-      <input type="checkbox" id="visibilityState">
-      <label for="hidden">Overwrite "document.hidden"</label>
-      <input type="checkbox" id="hidden">
+  <h1>Options :: Always Active Plus</h1>
+  <fieldset>
+    <legend><h2>General</h2></legend>
+    <div class="grid">
+      <label for="autoSave">Automatically save settings</label>
+      <input type="checkbox" id="autoSave" checked>
+      <label for="allSites">Enable on all sites by default (use hostnames as exceptions)</label>
+      <input type="checkbox" id="allSites">
+      <label for="badge">Show the ON/OFF badge text on the extension button</label>
+      <input type="checkbox" id="badge">
+      <label for="log">Display logs (for debugging purpose only)</label>
+      <input type="checkbox" id="log">
     </div>
-    <label for="blur">Globally block "blur" events</label>
-    <input type="checkbox" id="blur">
-    <label for="focus">Globally block "focus" events</label>
-    <input type="checkbox" id="focus">
-    <label for="visibility">Globally block "visibility" events</label>
-    <input type="checkbox" id="visibility">
-    <label for="mouseleave">Globally block "mouseleave" and "pointerleave" page-exit events</label>
-    <input type="checkbox" id="mouseleave">
-    <label for="mouseout">Globally block "mouseout" and "pointerout" page-exit events</label>
-    <input type="checkbox" id="mouseout">
-    <label for="keyboard">Globally block configured keyboard events</label>
-    <input type="checkbox" id="keyboard">
-    <label for="pointercapture">Globally block "lostpointercapture" events</label>
-    <input type="checkbox" id="pointercapture">
-    <div id="redirect-container">
-      <label for="redirect">Block JS redirection when page is hidden</label>
-      <input type="checkbox" id="redirect">
+  </fieldset>
+  <fieldset>
+    <legend><h2>Event blocking (applies to enabled websites)</h2></legend>
+    <div class="grid">
+      <div class="disabled" style="display: contents;">
+        <label for="visibilityState">Overwrite "document.visibilityState" (always on)</label>
+        <input type="checkbox" id="visibilityState" disabled>
+        <label for="hidden">Overwrite "document.hidden" (always on)</label>
+        <input type="checkbox" id="hidden" disabled>
+      </div>
+      <label for="blur">Globally block "blur" events</label>
+      <input type="checkbox" id="blur">
+      <label for="focus">Globally block "focus" events</label>
+      <input type="checkbox" id="focus">
+      <label for="visibility">Globally block "visibility" events</label>
+      <input type="checkbox" id="visibility">
+      <label for="mouseleave">Globally block "mouseleave" and "pointerleave" page-exit events</label>
+      <input type="checkbox" id="mouseleave">
+      <label for="mouseout">Globally block "mouseout" and "pointerout" page-exit events</label>
+      <input type="checkbox" id="mouseout">
+      <label for="keyboard">Globally block configured keyboard events</label>
+      <input type="checkbox" id="keyboard">
+      <label for="pointercapture">Globally block "lostpointercapture" events</label>
+      <input type="checkbox" id="pointercapture">
+      <label for="fullscreen">Keep the fullscreen state when the page is hidden (experimental)</label>
+      <input type="checkbox" id="fullscreen">
+      <div id="redirect-container">
+        <label for="redirect">Block JS redirection when page is hidden</label>
+        <input type="checkbox" id="redirect">
+      </div>
     </div>
-    <label for="log">Display logs (for debugging purpose only)</label>
-    <input type="checkbox" id="log">
-  </div>
-  <h1>Mouse movement on re-entry</h1>
-  <p>Humanize adds a bounded, randomized curve and small timing changes to re-entry. It applies globally as you move the slider. Interpolation 0 leaves mouse movement immediate; higher values slow the generated path. Start and stop smoothness control acceleration and braking. Real moves resume when the generated cursor catches up.</p>
-  <div class="grid">
-    <label for="mouseHumanize">Humanize movement (0-1): <output id="mouseHumanizeValue"></output></label>
-    <input type="range" id="mouseHumanize" min="0" max="1" step="0.01" value="0.5">
-    <label for="mouseInterpolation">Interpolation (0-1): <output id="mouseInterpolationValue"></output></label>
-    <input type="range" id="mouseInterpolation" min="0" max="1" step="0.01" value="0.35">
-    <label for="mouseStartSmoothness">Start smoothness (0-2): <output id="mouseStartSmoothnessValue"></output></label>
-    <input type="range" id="mouseStartSmoothness" min="0" max="2" step="0.01" value="0.3">
-    <label for="mouseStopSmoothness">Stop smoothness (0-2): <output id="mouseStopSmoothnessValue"></output></label>
-    <input type="range" id="mouseStopSmoothness" min="0" max="2" step="0.01" value="0.3">
-  </div>
-  <h1>Blocked Keyboard Events</h1>
+  </fieldset>
+  <fieldset>
+    <legend><h2>Mouse movement on re-entry</h2></legend>
+    <p>Humanize adds a bounded, randomized curve and small timing changes to re-entry. It applies globally as you move the slider. Interpolation 0 leaves mouse movement immediate; higher values slow the generated path. Start and stop smoothness control acceleration and braking. Real moves resume when the generated cursor catches up.</p>
+    <div class="grid">
+      <label for="mouseHumanize">Humanize movement (0-1): <output id="mouseHumanizeValue"></output></label>
+      <input type="range" id="mouseHumanize" min="0" max="1" step="0.01" value="0.5">
+      <label for="mouseInterpolation">Interpolation (0-1): <output id="mouseInterpolationValue"></output></label>
+      <input type="range" id="mouseInterpolation" min="0" max="1" step="0.01" value="0.35">
+      <label for="mouseStartSmoothness">Start smoothness (0-2): <output id="mouseStartSmoothnessValue"></output></label>
+      <input type="range" id="mouseStartSmoothness" min="0" max="2" step="0.01" value="0.3">
+      <label for="mouseStopSmoothness">Stop smoothness (0-2): <output id="mouseStopSmoothnessValue"></output></label>
+      <input type="range" id="mouseStopSmoothness" min="0" max="2" step="0.01" value="0.3">
+    </div>
+  </fieldset>
+  <h2>Blocked Keyboard Events</h2>
   <p>Comma-separated <code>KeyboardEvent.key</code>, <code>KeyboardEvent.code</code>, numeric <code>keyCode</code>, or modifier names. Use <code>Alt+Shift</code> to match a modifier combination.</p>
   <label for="blockedKeys">Blocked key values</label>
   <input type="text" id="blockedKeys" placeholder="AltGraph, AltRight, 225" aria-describedby="blocked-keys-help">
@@ -60,7 +75,7 @@
     <div class="keyboard-lab-heading">
       <div>
         <p class="keyboard-lab-kicker">INPUT TOOLS / CAPTURE</p>
-        <h2 id="keyboard-lab-title">Keyboard Event Lab <span class="keyboard-event-count" id="event-count">0</span></h2>
+        <h3 id="keyboard-lab-title">Keyboard Event Lab <span class="keyboard-event-count" id="event-count">0</span></h3>
         <p>Click the field and press the key or combination you want to inspect. Select captured rows, then choose a blocking rule.</p>
       </div>
       <div class="keyboard-lab-actions">
@@ -99,13 +114,13 @@
     </div>
     <p id="save-status" class="keyboard-save-status" role="status" aria-live="polite"></p>
   </section>
-  <h1>List of Hostnames</h1>
+  <h2>List of Hostnames</h2>
   <p id="host-mode-description"></p>
   <label for="hosts">Hostnames</label>
   <textarea id="hosts" rows="8" aria-describedby="host-mode-description" placeholder="Hostnames separated by commas. Use the all-sites toggle to choose whether these are inclusions or exceptions. Example:
 
 example.com, *.example.com, www.example.com"></textarea>
-  <h1><a data-href="faq6" target="_blank">Policies</a></h1>
+  <h2><a data-href="faq6" target="_blank">Policies</a></h2>
   <label for="policies">Hostname event policies</label>
   <textarea id="policies" rows="10" aria-describedby="policies-help" placeholder='A JSON object to prevent blocking of some events that conflict with particular hostnames. Example:
 {
@@ -119,7 +134,7 @@ example.com, *.example.com, www.example.com"></textarea>
     <input type="button" id="test" value="Test Rules">
   </p>
   <div>
-    <input type="button" id="reset" value="Factory Reset">
+    <input type="button" id="reset" value="Factory Reset (press twice)">
     <input type="button" id="save" value="Save Options">
     <span id="toast" role="status" aria-live="polite"></span>
   </div>
