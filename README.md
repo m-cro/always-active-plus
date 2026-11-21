@@ -23,8 +23,8 @@ exceptions.
 node --test test/*.test.js
 node scripts/test-browser-interpolation.mjs
 node scripts/test-browser-keyboard-lab.mjs
-npx --yes web-ext@10.5.0 lint --source-dir v3
-npx --yes web-ext@10.5.0 build --source-dir v3
+npx --yes web-ext@10.8.0 lint --source-dir v3
+npx --yes web-ext@10.8.0 build --source-dir v3
 ```
 
 The browser interpolation test drives real Chrome mouse input through the injected script. Set `TEST_UNPACKED=1` to load and test the unpacked extension through Chrome DevTools, including its content script registration. Add `TEST_SITE=1` to test the DPIonMouse movement canvas directly; this requires network access. Add `TEST_CANVAS_ONLY=1` to verify that leaving just the canvas does not interpolate, `TEST_OVERLAY=1` to verify that a DOM overlay does not interpolate, `TEST_OS_OVERLAY=1` to test an in-canvas return after a quiet overlay gap, `TEST_SECOND_ENTRY=1` to test two focus returns in order. Set `TEST_SETTINGS=1` to measure each slider's effect in Chrome. Set `CHROME_BIN` to a Chromium-based browser binary if Chrome is installed elsewhere.

@@ -15,6 +15,6 @@
   "requires_payment": false,
   "version": {
     "license": "MPL-2.0",
-    "approval_notes": "The extension contains readable, unminified JavaScript with no bundling, generated code, remote code, or third-party libraries. The v3 directory is the exact extension source. It stores preferences locally with chrome.storage.local and does not collect or transmit user data. The broad host permission supports the default all-sites mode; users can configure hostname exceptions or switch to an included-sites mode. Build with: npx --yes web-ext@10.5.0 build --source-dir v3"
+    "approval_notes": "The extension contains readable, unminified JavaScript with no bundling, generated code, remote code, or third-party libraries. The v3 directory is the exact extension source. It stores preferences locally with chrome.storage.local and does not collect or transmit user data. The broad host permission supports the default all-sites mode; users can configure hostname exceptions or switch to an included-sites mode. Build with: npx --yes web-ext@10.8.0 build --source-dir v3"
   }
 }
